@@ -1,0 +1,40 @@
+import discord
+from discord.ext import commands
+import aiohttp
+import random
+
+# Botun mesajları okuyabilmesi için intent'leri ayarlıyoruz
+intents = discord.Intents.default()
+intents.message_content = True
+
+bot = commands.Bot(command_prefix='$', intents=intents)
+
+@bot.event
+async def on_ready():
+    print(f'{bot.user} olarak sunucuya bağlanıldı!')
+
+@bot.command(name="rastgele", help="Rastgele bir Pokémon resmi gönderir.")
+async def rastgele(ctx):
+    # 1 ile 1010 arasında rastgele bir Pokémon ID'si seçiyoruz
+    pokemon_id = random.randint(1, 1010)
+    url = f"https://pokeapi.co/api/v2/pokemon/{pokemon_id}"
+    
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url) as response:
+            if response.status == 200:
+                veri = await response.json()
+                
+                # Pokémon'un adını ve resmi alıyoruz (official-artwork daha kaliteli bir resim verir)
+                ad = veri['name'].capitalize()
+                resim_url = veri['sprites']['other']['official-artwork']['front_default']
+                
+                # Resmi Discord'da güzel göstermek için Embed oluşturuyoruz
+                embed = discord.Embed(title=f"Rastgele Pokémon: {ad}", color=discord.Color.random())
+                embed.set_image(url=resim_url)
+                
+                await ctx.send(embed=embed)
+            else:
+                await ctx.send("⚠️ Resim getirilirken bir sorun oluştu.")
+
+
+bot.run('yourtoken')
